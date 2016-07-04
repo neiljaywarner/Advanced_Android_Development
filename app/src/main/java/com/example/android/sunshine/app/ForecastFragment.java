@@ -15,6 +15,8 @@
  */
 package com.example.android.sunshine.app;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -38,12 +40,38 @@ import android.widget.TextView;
 
 import com.example.android.sunshine.app.data.WeatherContract;
 import com.example.android.sunshine.app.sync.SunshineSyncAdapter;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.DataItem;
+import com.google.android.gms.wearable.DataMap;
+import com.google.android.gms.wearable.DataMapItem;
+import com.google.android.gms.wearable.Wearable;
+
+import static com.bumptech.glide.gifdecoder.GifHeaderParser.TAG;
 
 /**
  * Encapsulates fetching the forecast and displaying it as a {@link ListView} layout.
  */
-public class ForecastFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>, SharedPreferences.OnSharedPreferenceChangeListener {
-    public static final String LOG_TAG = ForecastFragment.class.getSimpleName();
+public class ForecastFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor>, SharedPreferences.OnSharedPreferenceChangeListener
+    ,GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
+    ResultCallback<DataApi.DataItemResult>
+
+    {
+        private static final String TAG = "NJW";
+
+        // TODO: use the shared constants (needs covering all the samples with Gradle build model)
+        private static final String KEY_BACKGROUND_COLOR = "BACKGROUND_COLOR";
+        private static final String KEY_HOURS_COLOR = "HOURS_COLOR";
+        private static final String KEY_MINUTES_COLOR = "MINUTES_COLOR";
+        private static final String KEY_SECONDS_COLOR = "SECONDS_COLOR";
+        private static final String PATH_WITH_FEATURE = "/watch_face_config/Digital";
+
+        private GoogleApiClient mGoogleApiClient;
+        private String mPeerId;
+
+        public static final String LOG_TAG = ForecastFragment.class.getSimpleName();
     private ForecastAdapter mForecastAdapter;
 
     private ListView mListView;
@@ -105,6 +133,13 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
         super.onCreate(savedInstanceState);
         // Add this line in order for this fragment to handle menu events.
         setHasOptionsMenu(true);
+        Log.i("NJW", "FCF-watchAbout to connect o google client");
+        mGoogleApiClient = new GoogleApiClient.Builder(this.getActivity())
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(Wearable.API)
+                .build();
+        mGoogleApiClient.connect();
     }
 
     @Override
@@ -325,4 +360,65 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
         }
     }
 
-}
+
+
+
+        @Override // GoogleApiClient.ConnectionCallbacks
+        public void onConnected(Bundle connectionHint) {
+            if (Log.isLoggable(TAG, Log.DEBUG)) {
+                Log.d(TAG, "onConnected: " + connectionHint);
+            }
+
+            if (mPeerId != null) {
+                Uri.Builder builder = new Uri.Builder();
+                Uri uri = builder.scheme("wear").path(PATH_WITH_FEATURE).authority(mPeerId).build();
+                Wearable.DataApi.getDataItem(mGoogleApiClient, uri).setResultCallback(this);
+            } else {
+                displayNoConnectedDeviceDialog();
+            }
+        }
+
+        @Override // ResultCallback<DataApi.DataItemResult>
+        public void onResult(DataApi.DataItemResult dataItemResult) {
+            if (dataItemResult.getStatus().isSuccess() && dataItemResult.getDataItem() != null) {
+                DataItem configDataItem = dataItemResult.getDataItem();
+                DataMapItem dataMapItem = DataMapItem.fromDataItem(configDataItem);
+                DataMap config = dataMapItem.getDataMap();
+                Log.i("NJW", "isSuccess in onResult in forecastFragment");
+            } else {
+                // If DataItem with the current config can't be retrieved, select the default items on
+                // each picker.
+                Log.e("NJW", "no success");
+            }
+        }
+
+        @Override // GoogleApiClient.ConnectionCallbacks
+        public void onConnectionSuspended(int cause) {
+            if (Log.isLoggable(TAG, Log.DEBUG)) {
+                Log.d(TAG, "onConnectionSuspended: " + cause);
+            }
+        }
+
+        @Override // GoogleApiClient.OnConnectionFailedListener
+        public void onConnectionFailed(ConnectionResult result) {
+            if (Log.isLoggable(TAG, Log.DEBUG)) {
+                Log.d(TAG, "onConnectionFailed: " + result);
+            }
+        }
+
+        private void displayNoConnectedDeviceDialog() {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this.getActivity());
+            String messageText = "no device connected";
+            String okText = getResources().getString(android.R.string.ok);
+            builder.setMessage(messageText)
+                    .setCancelable(false)
+                    .setPositiveButton(okText, new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) { }
+                    });
+            AlertDialog alert = builder.create();
+            alert.show();
+        }
+
+
+
+    }
