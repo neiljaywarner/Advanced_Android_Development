@@ -527,6 +527,7 @@ public class NJWSunshineWatchFace extends CanvasWatchFaceService {
 
         @Override // DataApi.DataListener
         public void onDataChanged(DataEventBuffer dataEvents) {
+            Log.d(TAG, "(Watch) onDataChanged: ");
             for (DataEvent dataEvent : dataEvents) {
                 if (dataEvent.getType() != DataEvent.TYPE_CHANGED) {
                     continue;
@@ -588,6 +589,7 @@ public class NJWSunshineWatchFace extends CanvasWatchFaceService {
 
         @Override  // GoogleApiClient.ConnectionCallbacks
         public void onConnected(Bundle connectionHint) {
+            Log.d(TAG, "onConnected: (WATCH)");
             if (Log.isLoggable(TAG, Log.DEBUG)) {
                 Log.d(TAG, "onConnected: " + connectionHint);
             }

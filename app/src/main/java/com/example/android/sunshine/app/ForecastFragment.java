@@ -42,11 +42,14 @@ import com.example.android.sunshine.app.data.WeatherContract;
 import com.example.android.sunshine.app.sync.SunshineSyncAdapter;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.DataItem;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
+import com.google.android.gms.wearable.PutDataMapRequest;
+import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
 
 import static com.bumptech.glide.gifdecoder.GifHeaderParser.TAG;
@@ -365,17 +368,19 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
 
         @Override // GoogleApiClient.ConnectionCallbacks
         public void onConnected(Bundle connectionHint) {
+            Log.d(TAG, "FCF: onConnected: ");
             if (Log.isLoggable(TAG, Log.DEBUG)) {
                 Log.d(TAG, "onConnected: " + connectionHint);
             }
 
-            if (mPeerId != null) {
-                Uri.Builder builder = new Uri.Builder();
-                Uri uri = builder.scheme("wear").path(PATH_WITH_FEATURE).authority(mPeerId).build();
-                Wearable.DataApi.getDataItem(mGoogleApiClient, uri).setResultCallback(this);
-            } else {
-                displayNoConnectedDeviceDialog();
-            }
+            //doesn't need communication BACK.
+            Log.d("NJW", "about to put 17 integer");
+            PutDataMapRequest putDataMapReq = PutDataMapRequest.create("/sunshine");
+
+            putDataMapReq.getDataMap().putInt("key", 17);
+            PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
+            PendingResult<DataApi.DataItemResult> pendingResult =
+                    Wearable.DataApi.putDataItem(mGoogleApiClient, putDataReq);
         }
 
         @Override // ResultCallback<DataApi.DataItemResult>
