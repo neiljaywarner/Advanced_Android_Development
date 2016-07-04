@@ -219,7 +219,7 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
         // If there's instance state, mine it for useful information.
         // The end-goal here is that the user never knows that turning their device sideways
         // does crazy lifecycle related things.  It should feel like some stuff stretched out,
-        // or magically appeared to take advantage of room, but data or place in the app was never
+        // or magically appeared to take advantage of room, but data or place in the com.example.android.sunshine.app was never
         // actually *lost*.
         if (savedInstanceState != null && savedInstanceState.containsKey(SELECTED_KEY)) {
             // The listview probably hasn't even been populated yet.  Actually perform the
@@ -377,8 +377,8 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
             Log.d("NJW", "about to put 17 integer");
             PutDataMapRequest putDataMapReq = PutDataMapRequest.create("/sunshine");
 
-            putDataMapReq.getDataMap().putInt("key", 177);
-            putDataMapReq.getDataMap().putInt("key2", 177);
+            putDataMapReq.getDataMap().putInt("key", 127);
+            putDataMapReq.getDataMap().putInt("key2", 127);
 
             PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
             PendingResult<DataApi.DataItemResult> pendingResult =

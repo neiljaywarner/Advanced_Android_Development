@@ -429,7 +429,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
                                     .setContentText(contentText);
 
                     // Make something interesting happen when the user clicks on the notification.
-                    // In this case, opening the app is sufficient.
+                    // In this case, opening the com.example.android.sunshine.app is sufficient.
                     Intent resultIntent = new Intent(context, MainActivity.class);
 
                     // The stack builder object will contain an artificial back stack for the

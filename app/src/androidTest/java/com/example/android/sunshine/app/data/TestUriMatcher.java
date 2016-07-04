@@ -22,7 +22,7 @@ import android.test.AndroidTestCase;
 /*
     Uncomment this class when you are ready to test your UriMatcher.  Note that this class utilizes
     constants that are declared with package protection inside of the UriMatcher, which is why
-    the test must be in the same data package as the Android app code.  Doing the test this way is
+    the test must be in the same data package as the Android com.example.android.sunshine.app code.  Doing the test this way is
     a nice compromise between data hiding and testability.
  */
 public class TestUriMatcher extends AndroidTestCase {
@@ -30,11 +30,11 @@ public class TestUriMatcher extends AndroidTestCase {
     private static final long TEST_DATE = 1419033600L;  // December 20th, 2014
     private static final long TEST_LOCATION_ID = 10L;
 
-    // content://com.example.android.sunshine.app/weather"
+    // content://com.example.android.sunshine.com.example.android.sunshine.app/weather"
     private static final Uri TEST_WEATHER_DIR = WeatherContract.WeatherEntry.CONTENT_URI;
     private static final Uri TEST_WEATHER_WITH_LOCATION_DIR = WeatherContract.WeatherEntry.buildWeatherLocation(LOCATION_QUERY);
     private static final Uri TEST_WEATHER_WITH_LOCATION_AND_DATE_DIR = WeatherContract.WeatherEntry.buildWeatherLocationWithDate(LOCATION_QUERY, TEST_DATE);
-    // content://com.example.android.sunshine.app/location"
+    // content://com.example.android.sunshine.com.example.android.sunshine.app/location"
     private static final Uri TEST_LOCATION_DIR = WeatherContract.LocationEntry.CONTENT_URI;
 
     /*
