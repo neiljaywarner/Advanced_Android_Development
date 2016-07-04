@@ -377,7 +377,9 @@ public class ForecastFragment extends Fragment implements LoaderManager.LoaderCa
             Log.d("NJW", "about to put 17 integer");
             PutDataMapRequest putDataMapReq = PutDataMapRequest.create("/sunshine");
 
-            putDataMapReq.getDataMap().putInt("key", 17);
+            putDataMapReq.getDataMap().putInt("key", 177);
+            putDataMapReq.getDataMap().putInt("key2", 177);
+
             PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
             PendingResult<DataApi.DataItemResult> pendingResult =
                     Wearable.DataApi.putDataItem(mGoogleApiClient, putDataReq);

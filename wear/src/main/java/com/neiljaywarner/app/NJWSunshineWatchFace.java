@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.neiljaywarner.wear;
+package com.neiljaywarner.app;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -158,7 +158,7 @@ public class NJWSunshineWatchFace extends CanvasWatchFaceService {
 
             mBackgroundPaint = new Paint();
             mBackgroundPaint.setColor(Color.BLACK);
-            mBackgroundBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.bg);
+            mBackgroundBitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
 
             /* Set defaults for colors */
             mWatchHandColor = Color.WHITE;
@@ -441,8 +441,9 @@ public class NJWSunshineWatchFace extends CanvasWatchFaceService {
         @Override
         public void onVisibilityChanged(boolean visible) {
             super.onVisibilityChanged(visible);
-
+            Log.i("NJW", "visibility changed");
             if (visible) {
+                Log.i("NJW", "visible");
                 registerReceiver();
                 /* Update time zone in case it changed while we weren't visible. */
                 mGoogleApiClient.connect();
@@ -527,7 +528,7 @@ public class NJWSunshineWatchFace extends CanvasWatchFaceService {
 
         @Override // DataApi.DataListener
         public void onDataChanged(DataEventBuffer dataEvents) {
-            Log.d(TAG, "(Watch) onDataChanged: ");
+            Log.d("NJW", "****(Watch) ---onDataChanged: ");
             for (DataEvent dataEvent : dataEvents) {
                 if (dataEvent.getType() != DataEvent.TYPE_CHANGED) {
                     continue;
@@ -549,6 +550,7 @@ public class NJWSunshineWatchFace extends CanvasWatchFaceService {
         }
 
         private void updateUiForConfigDataMap(final DataMap config) {
+            Log.d("NJW", "updateUiForConfigDataMap: ");
             boolean uiUpdated = false;
             for (String configKey : config.keySet()) {
                 if (!config.containsKey(configKey)) {
@@ -590,24 +592,20 @@ public class NJWSunshineWatchFace extends CanvasWatchFaceService {
         @Override  // GoogleApiClient.ConnectionCallbacks
         public void onConnected(Bundle connectionHint) {
             Log.d(TAG, "onConnected: (WATCH)");
-            if (Log.isLoggable(TAG, Log.DEBUG)) {
-                Log.d(TAG, "onConnected: " + connectionHint);
-            }
+
             Wearable.DataApi.addListener(mGoogleApiClient, Engine.this);
         }
 
         @Override  // GoogleApiClient.ConnectionCallbacks
         public void onConnectionSuspended(int cause) {
-            if (Log.isLoggable(TAG, Log.DEBUG)) {
                 Log.d(TAG, "onConnectionSuspended: " + cause);
-            }
+
         }
 
         @Override  // GoogleApiClient.OnConnectionFailedListener
         public void onConnectionFailed(ConnectionResult result) {
-            if (Log.isLoggable(TAG, Log.DEBUG)) {
                 Log.d(TAG, "onConnectionFailed: " + result);
-            }
+
         }
     }
 }
