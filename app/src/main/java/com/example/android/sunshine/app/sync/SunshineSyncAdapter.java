@@ -55,6 +55,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Random;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 
@@ -712,9 +713,17 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
         mGoogleApiClient.connect();
 
         PutDataMapRequest putDataMapReq = PutDataMapRequest.create("/sunshine").setUrgent();
-        //TODO: no magic string constants.
-        String testString = Long.toString(System.currentTimeMillis());
-        putDataMapReq.getDataMap().putString("test", testString);
+
+        //test
+        Random random = new Random();
+        int temp = random.nextInt(20);
+        int high = temp + 10;
+        int low = temp - 10;
+        //config.putString("Condition", new String[]{"clear","rain","snow","thunder","cloudy"}[random.nextInt
+        // (4)]);
+        putDataMapReq.getDataMap().putInt("high", high);
+        putDataMapReq.getDataMap().putInt("low", low);
+
         PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
         PendingResult<DataApi.DataItemResult> pendingResult =
                 Wearable.DataApi.putDataItem(mGoogleApiClient, putDataReq);

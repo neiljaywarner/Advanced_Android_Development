@@ -21,6 +21,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -30,6 +32,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.provider.ContactsContract;
+import android.support.annotation.DrawableRes;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
 import android.util.Log;
@@ -73,6 +76,8 @@ public class NJWSunshineWatchface extends CanvasWatchFaceService implements Data
      */
     private static final int MSG_UPDATE_TIME = 0;
     private static final String TAG = "NJW_Watchface";
+    private @DrawableRes int mWeatherConditionIcon;
+    private Bitmap mBackgroundBitmap;
 
     @Override
     public Engine onCreateEngine() {
@@ -128,6 +133,8 @@ public class NJWSunshineWatchface extends CanvasWatchFaceService implements Data
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
 
+            mWeatherConditionIcon = Utility.getIconResourceForWeatherCondition(502);
+            mBackgroundBitmap = BitmapFactory.decodeResource(getResources(), mWeatherConditionIcon);
 
             mGoogleApiClient = new GoogleApiClient.Builder(NJWSunshineWatchface.this)
                     .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
@@ -278,6 +285,13 @@ public class NJWSunshineWatchface extends CanvasWatchFaceService implements Data
                 canvas.drawRect(0, 0, bounds.width(), bounds.height(), mBackgroundPaint);
             }
 
+            if (mAmbient && (mLowBitAmbient)) {
+                canvas.drawColor(Color.BLACK);
+
+            } else {
+                canvas.drawBitmap(mBackgroundBitmap, 0, 0, mBackgroundPaint);
+            }
+
             // Draw H:MM in ambient mode or H:MM:SS in interactive mode.
             long now = System.currentTimeMillis();
             mCalendar.setTimeInMillis(now);
@@ -334,9 +348,11 @@ public class NJWSunshineWatchface extends CanvasWatchFaceService implements Data
                 if(item.getUri().getPath().compareTo("/sunshine") == 0 ){
                     DataMap dataMap = DataMapItem.fromDataItem(item).getDataMap();
 
-                    dataMap.getString("test");
+                    int high = dataMap.getInt("high");
+                    int low = dataMap.getInt("low");
+                    Log.i(TAG, "low=" + low);
+                    Log.i(TAG, "high=" + high);
 
-                    Log.i(TAG, dataMap.getString("test"));
                 }
             }
         }
