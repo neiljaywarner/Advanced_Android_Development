@@ -35,6 +35,7 @@ import android.provider.ContactsContract;
 import android.support.annotation.DrawableRes;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
+import android.text.TextPaint;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
@@ -61,9 +62,12 @@ import java.util.concurrent.TimeUnit;
  * Digital watch face with seconds. In ambient mode, the seconds aren't displayed. On devices with
  * low-bit ambient mode, the text is drawn without anti-aliasing in ambient mode.
  */
-public class NJWSunshineWatchface extends CanvasWatchFaceService implements DataApi.DataListener {
+public class NJWSunshineWatchface extends CanvasWatchFaceService  {
     private static final Typeface NORMAL_TYPEFACE =
             Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL);
+
+    private static final Typeface TEMP_TYPEFACE =
+            Typeface.create(Typeface.MONOSPACE, Typeface.ITALIC);
 
     /**
      * Update rate in milliseconds for interactive mode. We update once a second since seconds are
@@ -104,11 +108,12 @@ public class NJWSunshineWatchface extends CanvasWatchFaceService implements Data
         }
     }
 
-    private class Engine extends CanvasWatchFaceService.Engine {
+    private class Engine extends CanvasWatchFaceService.Engine implements DataApi.DataListener {
         final Handler mUpdateTimeHandler = new EngineHandler(this);
         boolean mRegisteredTimeZoneReceiver = false;
         Paint mBackgroundPaint;
         Paint mTextPaint;
+        Paint mTemperatureTextPaint;
         boolean mAmbient;
         Calendar mCalendar;
         final BroadcastReceiver mTimeZoneReceiver = new BroadcastReceiver() {
@@ -120,6 +125,9 @@ public class NJWSunshineWatchface extends CanvasWatchFaceService implements Data
         };
         float mXOffset;
         float mYOffset;
+
+        private double mHigh = Integer.MIN_VALUE;
+        private double mLow = Integer.MIN_VALUE;
 
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
@@ -142,10 +150,10 @@ public class NJWSunshineWatchface extends CanvasWatchFaceService implements Data
                         public void onConnected(Bundle connectionHint) {
                             Log.d(TAG, "onConnected: " + connectionHint);
                             // Now you can use the Data Layer API
-                            Wearable.DataApi.addListener(mGoogleApiClient, NJWSunshineWatchface.this).setResultCallback(new ResultCallback<Status>() {
+                            Wearable.DataApi.addListener(mGoogleApiClient, Engine.this).setResultCallback(new ResultCallback<Status>() {
                                 @Override
                                 public void onResult(Status status) {
-                                    Log.i("myTag", String.valueOf(status));
+                                    Log.i(TAG, String.valueOf(status));
                                 }
                             });
                         }
@@ -180,6 +188,9 @@ public class NJWSunshineWatchface extends CanvasWatchFaceService implements Data
             mTextPaint = new Paint();
             mTextPaint = createTextPaint(resources.getColor(R.color.digital_text));
 
+            mTemperatureTextPaint =  createTemperatureTextPaint();
+            mTemperatureTextPaint.setTextSize(33f);
+
             mCalendar = Calendar.getInstance();
         }
 
@@ -193,6 +204,14 @@ public class NJWSunshineWatchface extends CanvasWatchFaceService implements Data
             Paint paint = new Paint();
             paint.setColor(textColor);
             paint.setTypeface(NORMAL_TYPEFACE);
+            paint.setAntiAlias(true);
+            return paint;
+        }
+
+        private Paint createTemperatureTextPaint() {
+            Paint paint = new Paint();
+            paint.setColor(getResources().getColor(android.R.color.holo_orange_dark));
+            paint.setTypeface(TEMP_TYPEFACE);
             paint.setAntiAlias(true);
             return paint;
         }
@@ -302,6 +321,21 @@ public class NJWSunshineWatchface extends CanvasWatchFaceService implements Data
                     : String.format("%d:%02d:%02d", mCalendar.get(Calendar.HOUR),
                     mCalendar.get(Calendar.MINUTE), mCalendar.get(Calendar.SECOND));
             canvas.drawText(text, mXOffset, mYOffset, mTextPaint);
+
+
+            if (mHigh > Integer.MIN_VALUE) {
+                String highText = Utility.formatFarenheitTemperature(getApplicationContext(), mHigh);
+                String lowText = Utility.formatFarenheitTemperature(getApplicationContext(), mLow);
+                float tempXOffset = mXOffset; //TODO: Center by calculating textWidth / 2?
+                float highTemperatureYOffset = mYOffset - 70.0f;
+                float lowTemperatureYOffset = mYOffset + 70.0f;
+
+
+
+                canvas.drawText(highText, tempXOffset, highTemperatureYOffset, mTemperatureTextPaint);
+                canvas.drawText(lowText, tempXOffset, lowTemperatureYOffset, mTemperatureTextPaint);
+            }
+
         }
 
         /**
@@ -335,26 +369,29 @@ public class NJWSunshineWatchface extends CanvasWatchFaceService implements Data
                 mUpdateTimeHandler.sendEmptyMessageDelayed(MSG_UPDATE_TIME, delayMs);
             }
         }
-    }
 
 
-    // for receiving from app's SyncAdapter
-    public void onDataChanged(DataEventBuffer dataEventBuffer) {
-        Log.i(TAG, "in on Data Changed");
-        for (DataEvent event : dataEventBuffer){
-            if(event.getType() == DataEvent.TYPE_CHANGED){
-                DataItem item = event.getDataItem();
-                //TODO: Magic string, make it match with syncadapter via constants file
-                if(item.getUri().getPath().compareTo("/sunshine") == 0 ){
-                    DataMap dataMap = DataMapItem.fromDataItem(item).getDataMap();
+        // for receiving from app's SyncAdapter
+        public void onDataChanged(DataEventBuffer dataEventBuffer) {
+            Log.i(TAG, "in on Data Changed");
+            for (DataEvent event : dataEventBuffer){
+                if(event.getType() == DataEvent.TYPE_CHANGED){
+                    DataItem item = event.getDataItem();
+                    //TODO: Magic string, make it match with syncadapter via constants file
+                    if(item.getUri().getPath().compareTo("/sunshine") == 0 ){
+                        DataMap dataMap = DataMapItem.fromDataItem(item).getDataMap();
+                        Log.e("NJW", "testTimeString" + dataMap.getString("test"));
+                        mHigh = dataMap.getDouble("high");
+                        mLow = dataMap.getDouble("low");
+                        Log.i(TAG, "low=" + mLow);
+                        Log.i(TAG, "high=" + mHigh);
+                        invalidate(); //redraw, updating values.
 
-                    int high = dataMap.getInt("high");
-                    int low = dataMap.getInt("low");
-                    Log.i(TAG, "low=" + low);
-                    Log.i(TAG, "high=" + high);
-
+                    }
                 }
             }
         }
     }
+
+
 }

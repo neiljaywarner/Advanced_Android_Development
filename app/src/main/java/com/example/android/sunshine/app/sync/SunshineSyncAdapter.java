@@ -109,8 +109,6 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
     public void onPerformSync(Account account, Bundle extras, String authority, ContentProviderClient provider, SyncResult syncResult) {
         Log.d(LOG_TAG, "Starting sync");
 
-        setupGoogleWearClient();
-        sendTestItem();
 
         String locationQuery = Utility.getPreferredLocation(getContext());
 
@@ -409,12 +407,13 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
         Context context = getContext();
 
         setupGoogleWearClient();
-        sendTestItem();
+       // sendToWatch(99,22);
+        //FIXME
 
 
         //checking the last update and notify if it' the first of the day
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        boolean displayNotifications = false;
+        boolean displayNotifications = true;
 
         if ( displayNotifications ) {
 
@@ -422,7 +421,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
             long lastSync = prefs.getLong(lastNotificationKey, 0);
 
            // if (System.currentTimeMillis() - lastSync >= DAY_IN_MILLIS) {
-                if (System.currentTimeMillis() - lastSync >= 1) {
+                if (true) {
 
                     // Last sync was more than 1 day ago, let's send a notification with the weather.
                 String locationQuery = Utility.getPreferredLocation(context);
@@ -431,8 +430,9 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
 
                 // we'll query our contentProvider, as always
                 Cursor cursor = context.getContentResolver().query(weatherUri, NOTIFY_WEATHER_PROJECTION, null, null, null);
-
+                    Log.e(TAG, "notifyWatch: cursor has" + cursor.getCount() );
                 if (cursor.moveToFirst()) {
+                    Log.e(TAG, "notifyWatch: MoveToFirst");
                     int weatherId = cursor.getInt(INDEX_WEATHER_ID);
                     double high = cursor.getDouble(INDEX_MAX_TEMP);
                     double low = cursor.getDouble(INDEX_MIN_TEMP);
@@ -454,12 +454,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
                             ? resources.getDimensionPixelSize(android.R.dimen.notification_large_icon_height)
                             : resources.getDimensionPixelSize(R.dimen.notification_large_icon_default);
 
-
-                    // Define the text of the forecast.
-                    String contentText = String.format(context.getString(R.string.format_notification),
-                            desc,
-                            Utility.formatTemperature(context, high),
-                            Utility.formatTemperature(context, low));
+                    sendToWatch(high, low);
 
                     //refreshing last sync
                     SharedPreferences.Editor editor = prefs.edit();
@@ -479,6 +474,35 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
         //TODO: no magic string constants.
         String testString = Long.toString(System.currentTimeMillis());
         putDataMapReq.getDataMap().putString("test", testString);
+        PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
+        PendingResult<DataApi.DataItemResult> pendingResult =
+                Wearable.DataApi.putDataItem(mGoogleApiClient, putDataReq);
+
+
+        DataApi.DataItemResult result = pendingResult.await();
+        if(result.getStatus().isSuccess()) {
+            Log.d(TAG, "Data item set: " + result.getDataItem().getUri());
+        }
+        //following similar to https://developer.android.com/training/wearables/data-layer/data-items.html
+    }
+
+    /**
+     * TODO: FIXME, uses cardcoded 511 snow.
+     * @param high
+     * @param low
+     */
+    private void sendToWatch(double  high, double low) {
+        Log.e(TAG, "sendToWatch: high/low" +  high +"/" + low );
+        // setUrgent etc re: https://stackoverflow.com/questions/35708949/send-and-receiving-data-using-datamap-android-wearable
+
+        PutDataMapRequest putDataMapReq = PutDataMapRequest.create("/sunshine").setUrgent();
+        //TODO: no magic string constants.
+        String testString = Long.toString(System.currentTimeMillis());
+        putDataMapReq.getDataMap().putString("test", testString);
+        putDataMapReq.getDataMap().putDouble("high", high);
+        putDataMapReq.getDataMap().putDouble("low", low);
+        putDataMapReq.getDataMap().putInt("code", 511); //TODO: FIXME
+
         PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
         PendingResult<DataApi.DataItemResult> pendingResult =
                 Wearable.DataApi.putDataItem(mGoogleApiClient, putDataReq);
@@ -676,7 +700,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
         Log.e(TAG, "syncImmediately: " );
 
 
-        wearTestSend(context);
+     //   wearTestSend(context);
 
         Bundle bundle = new Bundle();
         bundle.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
