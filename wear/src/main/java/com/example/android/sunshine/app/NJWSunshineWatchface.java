@@ -29,11 +29,25 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.ContactsContract;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
 
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.DataEvent;
+import com.google.android.gms.wearable.DataEventBuffer;
+import com.google.android.gms.wearable.DataItem;
+import com.google.android.gms.wearable.DataMap;
+import com.google.android.gms.wearable.DataMapItem;
+import com.google.android.gms.wearable.Wearable;
 
 import java.lang.ref.WeakReference;
 import java.util.Calendar;
@@ -44,7 +58,7 @@ import java.util.concurrent.TimeUnit;
  * Digital watch face with seconds. In ambient mode, the seconds aren't displayed. On devices with
  * low-bit ambient mode, the text is drawn without anti-aliasing in ambient mode.
  */
-public class NJWSunshineWatchface extends CanvasWatchFaceService {
+public class NJWSunshineWatchface extends CanvasWatchFaceService implements DataApi.DataListener {
     private static final Typeface NORMAL_TYPEFACE =
             Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL);
 
@@ -58,6 +72,7 @@ public class NJWSunshineWatchface extends CanvasWatchFaceService {
      * Handler message id for updating the time periodically in interactive mode.
      */
     private static final int MSG_UPDATE_TIME = 0;
+    private static final String TAG = "NJW_Watchface";
 
     @Override
     public Engine onCreateEngine() {
@@ -106,10 +121,43 @@ public class NJWSunshineWatchface extends CanvasWatchFaceService {
          * disable anti-aliasing in ambient mode.
          */
         boolean mLowBitAmbient;
+        private GoogleApiClient mGoogleApiClient;
+
 
         @Override
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
+
+
+            mGoogleApiClient = new GoogleApiClient.Builder(NJWSunshineWatchface.this)
+                    .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
+                        @Override
+                        public void onConnected(Bundle connectionHint) {
+                            Log.d(TAG, "onConnected: " + connectionHint);
+                            // Now you can use the Data Layer API
+                            Wearable.DataApi.addListener(mGoogleApiClient, NJWSunshineWatchface.this).setResultCallback(new ResultCallback<Status>() {
+                                @Override
+                                public void onResult(Status status) {
+                                    Log.i("myTag", String.valueOf(status));
+                                }
+                            });
+                        }
+                        @Override
+                        public void onConnectionSuspended(int cause) {
+                            Log.d(TAG, "onConnectionSuspended: " + cause);
+                        }
+                    })
+                    .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
+                        @Override
+                        public void onConnectionFailed(ConnectionResult result) {
+                            Log.d(TAG, "onConnectionFailed: " + result);
+                        }
+                    })
+                    // Request access only to the Wearable API
+                    .addApi(Wearable.API)
+                    .build();
+
+            mGoogleApiClient.connect();
 
             setWatchFaceStyle(new WatchFaceStyle.Builder(NJWSunshineWatchface.this)
                     .setCardPeekMode(WatchFaceStyle.PEEK_MODE_VARIABLE)
@@ -271,6 +319,25 @@ public class NJWSunshineWatchface extends CanvasWatchFaceService {
                 long delayMs = INTERACTIVE_UPDATE_RATE_MS
                         - (timeMs % INTERACTIVE_UPDATE_RATE_MS);
                 mUpdateTimeHandler.sendEmptyMessageDelayed(MSG_UPDATE_TIME, delayMs);
+            }
+        }
+    }
+
+
+    // for receiving from app's SyncAdapter
+    public void onDataChanged(DataEventBuffer dataEventBuffer) {
+        Log.i(TAG, "in on Data Changed");
+        for (DataEvent event : dataEventBuffer){
+            if(event.getType() == DataEvent.TYPE_CHANGED){
+                DataItem item = event.getDataItem();
+                //TODO: Magic string, make it match with syncadapter via constants file
+                if(item.getUri().getPath().compareTo("/sunshine") == 0 ){
+                    DataMap dataMap = DataMapItem.fromDataItem(item).getDataMap();
+
+                    dataMap.getString("test");
+
+                    Log.i(TAG, dataMap.getString("test"));
+                }
             }
         }
     }
