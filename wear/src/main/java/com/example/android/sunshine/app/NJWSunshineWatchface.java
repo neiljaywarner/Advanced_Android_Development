@@ -378,12 +378,12 @@ public class NJWSunshineWatchface extends CanvasWatchFaceService  {
                     //TODO: Magic string, make it match with syncadapter via constants file
                     if(item.getUri().getPath().compareTo("/sunshine") == 0 ){
                         DataMap dataMap = DataMapItem.fromDataItem(item).getDataMap();
-                        Log.e("NJW", "testTimeString" + dataMap.getString("test"));
+                        Log.i("NJW", "testTimeString" + dataMap.getString("test"));
                         mHigh = dataMap.getDouble("high");
                         mLow = dataMap.getDouble("low");
                         int weatherId = dataMap.getInt("weatherId"); //800 =clear, etc, etc.
                         mWeatherConditionIcon = Utility.getIconResourceForWeatherCondition(weatherId);
-                        Log.i(TAG, "Celcius:" +  mLow + "/" + mHigh);
+                        Log.i(TAG, "Celsius:" +  mLow + "/" + mHigh);
                         Log.i(TAG, "weatherId=" + weatherId);
                         invalidate(); //redraw, updating values.
 

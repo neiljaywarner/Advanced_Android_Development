@@ -144,7 +144,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
                     .appendQueryParameter(APPID_PARAM, BuildConfig.OPEN_WEATHER_MAP_API_KEY)
                     .build();
 
-            Log.e(TAG, "onPerformSync: builturi=" + builtUri.toString() );
+            Log.d(TAG, "onPerformSync: builturi=" + builtUri.toString() );
             URL url = new URL(builtUri.toString());
 
             // Create the request to OpenWeatherMap, and open the connection
@@ -641,7 +641,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
      * @param context The context used to access the account service
      */
     public static void syncImmediately(Context context) {
-        Log.e(TAG, "syncImmediately: " );
+        Log.d(TAG, "syncImmediately: " );
 
         Bundle bundle = new Bundle();
         bundle.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
@@ -649,8 +649,6 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
         ContentResolver.requestSync(getSyncAccount(context),
                 context.getString(R.string.content_authority), bundle);
     }
-
-
 
     /**
      * Helper method to get the fake account to be used with SyncAdapter, or make a new one
