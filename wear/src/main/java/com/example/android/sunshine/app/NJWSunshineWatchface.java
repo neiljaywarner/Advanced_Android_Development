@@ -141,8 +141,7 @@ public class NJWSunshineWatchface extends CanvasWatchFaceService  {
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
 
-            mWeatherConditionIcon = Utility.getIconResourceForWeatherCondition(502);
-            mBackgroundBitmap = BitmapFactory.decodeResource(getResources(), mWeatherConditionIcon);
+
 
             mGoogleApiClient = new GoogleApiClient.Builder(NJWSunshineWatchface.this)
                     .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
@@ -308,7 +307,11 @@ public class NJWSunshineWatchface extends CanvasWatchFaceService  {
                 canvas.drawColor(Color.BLACK);
 
             } else {
-                canvas.drawBitmap(mBackgroundBitmap, 0, 0, mBackgroundPaint);
+                if (mWeatherConditionIcon > 0) {
+                    mBackgroundBitmap = BitmapFactory.decodeResource(getResources(), mWeatherConditionIcon);
+                    canvas.drawBitmap(mBackgroundBitmap, 0, 0, mBackgroundPaint);
+                }
+
             }
 
             // Draw H:MM in ambient mode or H:MM:SS in interactive mode.
@@ -383,8 +386,11 @@ public class NJWSunshineWatchface extends CanvasWatchFaceService  {
                         Log.e("NJW", "testTimeString" + dataMap.getString("test"));
                         mHigh = dataMap.getDouble("high");
                         mLow = dataMap.getDouble("low");
+                        int weatherId = dataMap.getInt("weatherId"); //800 =clear, etc, etc.
+                        mWeatherConditionIcon = Utility.getIconResourceForWeatherCondition(weatherId);
                         Log.i(TAG, "low=" + mLow);
                         Log.i(TAG, "high=" + mHigh);
+                        Log.i(TAG, "weatherId=" + weatherId);
                         invalidate(); //redraw, updating values.
 
                     }

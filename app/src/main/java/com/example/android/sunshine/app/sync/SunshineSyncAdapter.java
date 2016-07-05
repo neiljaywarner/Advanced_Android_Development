@@ -454,7 +454,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
                             ? resources.getDimensionPixelSize(android.R.dimen.notification_large_icon_height)
                             : resources.getDimensionPixelSize(R.dimen.notification_large_icon_default);
 
-                    sendToWatch(high, low);
+                    sendToWatch(high, low, weatherId);
 
                     //refreshing last sync
                     SharedPreferences.Editor editor = prefs.edit();
@@ -487,12 +487,12 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
     }
 
     /**
-     * TODO: FIXME, uses cardcoded 511 snow.
      * @param high
      * @param low
+     * @param weatherId = code that maps to an icon
      */
-    private void sendToWatch(double  high, double low) {
-        Log.e(TAG, "sendToWatch: high/low" +  high +"/" + low );
+    private void sendToWatch(double  high, double low, int weatherId) {
+        Log.d(TAG, "sendToWatch() called with: high = [" + high + "], low = [" + low + "], weatherId = [" + weatherId + "]");
         // setUrgent etc re: https://stackoverflow.com/questions/35708949/send-and-receiving-data-using-datamap-android-wearable
 
         PutDataMapRequest putDataMapReq = PutDataMapRequest.create("/sunshine").setUrgent();
@@ -501,7 +501,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
         putDataMapReq.getDataMap().putString("test", testString);
         putDataMapReq.getDataMap().putDouble("high", high);
         putDataMapReq.getDataMap().putDouble("low", low);
-        putDataMapReq.getDataMap().putInt("code", 511); //TODO: FIXME
+        putDataMapReq.getDataMap().putInt("weatherId", weatherId); //TODO: Someday put magic strings in 'common' library project or something so they match
 
         PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
         PendingResult<DataApi.DataItemResult> pendingResult =
@@ -510,7 +510,15 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
 
         DataApi.DataItemResult result = pendingResult.await();
         if(result.getStatus().isSuccess()) {
-            Log.d(TAG, "Data item set: " + result.getDataItem().getUri());
+            Log.d(TAG, "---Data item set: " + result.getDataItem().getUri());
+        }
+
+        if(result.getStatus().isCanceled()) {
+            Log.d(TAG, "---canceled dataitem");
+        }
+
+        if(result.getStatus().isInterrupted()) {
+            Log.d(TAG, "---interrupted dataitem");
         }
         //following similar to https://developer.android.com/training/wearables/data-layer/data-items.html
     }
