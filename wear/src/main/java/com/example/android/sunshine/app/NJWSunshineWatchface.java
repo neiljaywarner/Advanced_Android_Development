@@ -141,8 +141,6 @@ public class NJWSunshineWatchface extends CanvasWatchFaceService  {
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
 
-
-
             mGoogleApiClient = new GoogleApiClient.Builder(NJWSunshineWatchface.this)
                     .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
                         @Override
@@ -385,8 +383,7 @@ public class NJWSunshineWatchface extends CanvasWatchFaceService  {
                         mLow = dataMap.getDouble("low");
                         int weatherId = dataMap.getInt("weatherId"); //800 =clear, etc, etc.
                         mWeatherConditionIcon = Utility.getIconResourceForWeatherCondition(weatherId);
-                        Log.i(TAG, "low=" + mLow);
-                        Log.i(TAG, "high=" + mHigh);
+                        Log.i(TAG, "Celcius:" +  mLow + "/" + mHigh);
                         Log.i(TAG, "weatherId=" + weatherId);
                         invalidate(); //redraw, updating values.
 
