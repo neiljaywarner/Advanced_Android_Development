@@ -329,14 +329,11 @@ public class NJWSunshineWatchface extends CanvasWatchFaceService  {
             if (mHigh > Integer.MIN_VALUE) {
                 String highText = Utility.formatFarenheitTemperature(getApplicationContext(), mHigh);
                 String lowText = Utility.formatFarenheitTemperature(getApplicationContext(), mLow);
-                float tempXOffset = mXOffset; //TODO: Center by calculating textWidth / 2?
-                float highTemperatureYOffset = mYOffset - 70.0f;
-                float lowTemperatureYOffset = mYOffset + 70.0f;
+                float temperatureXOffset = mXOffset + 50f; //TODO: Center by calculating textWidth / 2?
+                float temperatureYOffset = mYOffset + 120.0f;
 
-
-
-                canvas.drawText(highText, tempXOffset, highTemperatureYOffset, mTemperatureTextPaint);
-                canvas.drawText(lowText, tempXOffset, lowTemperatureYOffset, mTemperatureTextPaint);
+                String temperatureText = lowText + "/" + highText;
+                canvas.drawText(temperatureText, temperatureXOffset, temperatureYOffset, mTemperatureTextPaint);
             }
 
         }
