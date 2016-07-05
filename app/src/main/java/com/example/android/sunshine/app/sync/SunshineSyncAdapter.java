@@ -380,7 +380,6 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
                     @Override
                     public void onConnected(Bundle connectionHint) {
                         Log.d(TAG, "onConnected: " + connectionHint);
-                        // Now you can use the Data Layer API
                     }
                     @Override
                     public void onConnectionSuspended(int cause) {
@@ -407,83 +406,20 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
         Context context = getContext();
 
         setupGoogleWearClient();
-       // sendToWatch(99,22);
-        //FIXME
+        String locationQuery = Utility.getPreferredLocation(context);
 
+        Uri weatherUri = WeatherContract.WeatherEntry.buildWeatherLocationWithDate(locationQuery, System.currentTimeMillis());
 
-        //checking the last update and notify if it' the first of the day
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        boolean displayNotifications = true;
+        Cursor cursor = context.getContentResolver().query(weatherUri, NOTIFY_WEATHER_PROJECTION, null, null, null);
 
-        if ( displayNotifications ) {
-
-            String lastNotificationKey = context.getString(R.string.pref_last_watch_sync);
-            long lastSync = prefs.getLong(lastNotificationKey, 0);
-
-           // if (System.currentTimeMillis() - lastSync >= DAY_IN_MILLIS) {
-                if (true) {
-
-                    // Last sync was more than 1 day ago, let's send a notification with the weather.
-                String locationQuery = Utility.getPreferredLocation(context);
-
-                Uri weatherUri = WeatherContract.WeatherEntry.buildWeatherLocationWithDate(locationQuery, System.currentTimeMillis());
-
-                // we'll query our contentProvider, as always
-                Cursor cursor = context.getContentResolver().query(weatherUri, NOTIFY_WEATHER_PROJECTION, null, null, null);
-                    Log.e(TAG, "notifyWatch: cursor has" + cursor.getCount() );
-                if (cursor.moveToFirst()) {
-                    Log.e(TAG, "notifyWatch: MoveToFirst");
-                    int weatherId = cursor.getInt(INDEX_WEATHER_ID);
-                    double high = cursor.getDouble(INDEX_MAX_TEMP);
-                    double low = cursor.getDouble(INDEX_MIN_TEMP);
-                    String desc = cursor.getString(INDEX_SHORT_DESC);
-
-                    int iconId = Utility.getIconResourceForWeatherCondition(weatherId);
-                    Resources resources = context.getResources();
-                    int artResourceId = Utility.getArtResourceForWeatherCondition(weatherId);
-                    String artUrl = Utility.getArtUrlForWeatherCondition(context, weatherId);
-
-                    // On Honeycomb and higher devices, we can retrieve the size of the large icon
-                    // Prior to that, we use a fixed size
-                    @SuppressLint("InlinedApi")
-                    int largeIconWidth = Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB
-                            ? resources.getDimensionPixelSize(android.R.dimen.notification_large_icon_width)
-                            : resources.getDimensionPixelSize(R.dimen.notification_large_icon_default);
-                    @SuppressLint("InlinedApi")
-                    int largeIconHeight = Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB
-                            ? resources.getDimensionPixelSize(android.R.dimen.notification_large_icon_height)
-                            : resources.getDimensionPixelSize(R.dimen.notification_large_icon_default);
-
-                    sendToWatch(high, low, weatherId);
-
-                    //refreshing last sync
-                    SharedPreferences.Editor editor = prefs.edit();
-                    editor.putLong(lastNotificationKey, System.currentTimeMillis());
-                    editor.commit();
-                }
-                cursor.close();
-            }
+        if (cursor.moveToFirst()) {
+            int weatherId = cursor.getInt(INDEX_WEATHER_ID);
+            double high = cursor.getDouble(INDEX_MAX_TEMP);
+            double low = cursor.getDouble(INDEX_MIN_TEMP);
+            sendToWatch(high, low, weatherId);
         }
-    }
+        cursor.close();
 
-    private void sendTestItem() {
-
-       // setUrgent etc re: https://stackoverflow.com/questions/35708949/send-and-receiving-data-using-datamap-android-wearable
-
-        PutDataMapRequest putDataMapReq = PutDataMapRequest.create("/sunshine").setUrgent();
-        //TODO: no magic string constants.
-        String testString = Long.toString(System.currentTimeMillis());
-        putDataMapReq.getDataMap().putString("test", testString);
-        PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
-        PendingResult<DataApi.DataItemResult> pendingResult =
-                Wearable.DataApi.putDataItem(mGoogleApiClient, putDataReq);
-
-
-        DataApi.DataItemResult result = pendingResult.await();
-        if(result.getStatus().isSuccess()) {
-            Log.d(TAG, "Data item set: " + result.getDataItem().getUri());
-        }
-        //following similar to https://developer.android.com/training/wearables/data-layer/data-items.html
     }
 
     /**
@@ -707,9 +643,6 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
     public static void syncImmediately(Context context) {
         Log.e(TAG, "syncImmediately: " );
 
-
-     //   wearTestSend(context);
-
         Bundle bundle = new Bundle();
         bundle.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
         bundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
@@ -718,55 +651,7 @@ public class SunshineSyncAdapter extends AbstractThreadedSyncAdapter {
     }
 
 
-    private static void wearTestSend(Context context) {
-        Log.d(TAG, "wearTestSend: ");
-        GoogleApiClient mGoogleApiClient = new GoogleApiClient.Builder(context)
-                .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
-                    @Override
-                    public void onConnected(Bundle connectionHint) {
-                        Log.d(TAG, "onConnected: " + connectionHint);
-                        // Now you can use the Data Layer API
-                    }
-                    @Override
-                    public void onConnectionSuspended(int cause) {
-                        Log.d(TAG, "onConnectionSuspended: " + cause);
-                    }
-                })
-                .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
-                    @Override
-                    public void onConnectionFailed(ConnectionResult result) {
-                        Log.d(TAG, "onConnectionFailed: " + result);
-                    }
-                })
-                // Request access only to the Wearable API
-                .addApi(Wearable.API)
-                .build();
 
-        mGoogleApiClient.connect();
-
-        PutDataMapRequest putDataMapReq = PutDataMapRequest.create("/sunshine").setUrgent();
-
-        //test
-        Random random = new Random();
-        int temp = random.nextInt(20);
-        int high = temp + 10;
-        int low = temp - 10;
-        //config.putString("Condition", new String[]{"clear","rain","snow","thunder","cloudy"}[random.nextInt
-        // (4)]);
-        putDataMapReq.getDataMap().putInt("high", high);
-        putDataMapReq.getDataMap().putInt("low", low);
-
-        PutDataRequest putDataReq = putDataMapReq.asPutDataRequest();
-        PendingResult<DataApi.DataItemResult> pendingResult =
-                Wearable.DataApi.putDataItem(mGoogleApiClient, putDataReq);
-
-        /*
-        DataApi.DataItemResult result = pendingResult.await();
-        if(result.getStatus().isSuccess()) {
-            Log.d(TAG, "Data item set: " + result.getDataItem().getUri());
-        }
-        */
-    }
     /**
      * Helper method to get the fake account to be used with SyncAdapter, or make a new one
      * if the fake account doesn't exist yet.  If we make a new account, we call the
